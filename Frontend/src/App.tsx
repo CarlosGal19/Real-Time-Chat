@@ -1,33 +1,23 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import './App.css'
 
 function App() {
-  const [count, setCount] = useState(0)
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    const message = (document.getElementById('message') as HTMLInputElement).value
+    console.log(message)
+  }
 
   return (
     <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+      <div className='m-auto w-96 h-dvh border-2 border-white relative overflow-hidden'>
+        <form onSubmit={handleSubmit}>
+          <div className='flex justify-evenly'>
+            <input type="text"  name='message' id='message' placeholder='Type a message' autoComplete='off'/>
+            <button type='submit' className='w-20 bg-blue-500 text-white'>Send</button>
+          </div>
+        </form>
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
     </>
   )
 }
