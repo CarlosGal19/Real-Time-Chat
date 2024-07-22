@@ -50,7 +50,7 @@ function App() {
         </ul>
         <form onSubmit={handleSubmit} className='flex flex-col justify-between h-full'>
           <div className='flex justify-between mt-auto'>
-            <input type="text" name='message' id='message' placeholder='Type a message' autoComplete='off' className='flex-1 mr-2 p-2 border border-gray-300 rounded'/>
+            <input type="text" name='message' id='message' placeholder='Type a message' autoComplete='off' className='flex-1 mr-2 p-2 border border-gray-300 rounded' />
             <button type='submit' className='w-20 bg-blue-500 text-white p-2 rounded'>Send</button>
           </div>
         </form>
