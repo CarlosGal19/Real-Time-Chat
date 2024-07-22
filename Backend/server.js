@@ -46,7 +46,7 @@ async function initializeDatabase() {
 // Llamar a la función de inicialización de la base de datos
 initializeDatabase();
 
-io.on('connection', (socket) => {
+io.on('connection', async (socket) => {
     console.log('A user connected');
     socket.on('disconnect', () => {
         console.log('A user disconnected');
@@ -68,6 +68,22 @@ io.on('connection', (socket) => {
             }
         }
     });
+    if(!socket.recovered){
+        try {
+            const results = await db.execute({
+                sql: `SELECT * FROM messages WHERE id > ?`,
+                args: [socket.handshake.auth.serverOffset ?? 0]
+            })
+
+            results.rows.forEach(row => {
+                socket.emit('server-message', row.content, row.id.toString())
+            });
+
+        } catch (error) {
+            console.log(error);
+            return;
+        }
+    }
 });
 
 app.use(logger('dev'));
