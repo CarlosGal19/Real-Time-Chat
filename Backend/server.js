@@ -1,12 +1,14 @@
 import express from 'express';
 import logger from 'morgan';
-
+import { configDotenv } from 'dotenv';
+import { createClient } from '@libsql/client';
 import { Server } from 'socket.io';
-import { createServer } from 'node:http'
+import { createServer } from 'node:http';
 
 const app = express();
-
 const server = createServer(app);
+
+configDotenv();
 
 const io = new Server(server, {
     cors: {
@@ -16,14 +18,55 @@ const io = new Server(server, {
     connectionStateRecovery: {}
 });
 
+const db = createClient({
+    url: process.env.TURSO_DATABASE_URL,
+    authToken: process.env.TURSO_AUTH_TOKEN,
+  });
+
+// Función para crear la tabla de mensajes si no existe
+async function initializeDatabase() {
+    try {
+        console.log('Creando tabla de mensajes...');
+        console.log(db);
+        await db.execute(`
+            CREATE TABLE IF NOT EXISTS messages(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                content TEXT NOT NULL
+            )
+        `);
+        console.log('Tabla de mensajes creada o ya existe');
+    } catch (error) {
+        console.error('Error al crear la tabla de mensajes:', error);
+        if (error.code === 'SERVER_ERROR' && error.cause && error.cause.status === 401) {
+            console.error('Error de autenticación: Verifica las credenciales y permisos en el servidor de la base de datos.');
+        }
+    }
+}
+
+// Llamar a la función de inicialización de la base de datos
+initializeDatabase();
+
 io.on('connection', (socket) => {
     console.log('A user connected');
     socket.on('disconnect', () => {
         console.log('A user disconnected');
     });
-    socket.on('client-message', (msg) => {
-        console.log('Client message: ' + msg);
-        io.emit('server-message', 'Server response');
+    socket.on('client-message', async (msg) => {
+        let result;
+        try {
+            result = await db.execute({
+                sql: `INSERT INTO messages(content) VALUES(:content)`,
+                args: {
+                    content: msg
+                }
+            });
+            io.emit('server-message', msg, result.lastInsertRowid.toString());
+        } catch (error) {
+            console.error('Error al insertar mensaje:', error);
+            if (error.code === 'SERVER_ERROR' && error.cause && error.cause.status === 401) {
+                console.error('Error de autenticación: Verifica las credenciales y permisos en el servidor de la base de datos.');
+            }
+        }
     });
 });
 
@@ -31,9 +74,10 @@ app.use(logger('dev'));
 app.use(express.json());
 
 app.get('/', (req, res) => {
-    res.send({msg: 'Hello World'});
+    res.send({ msg: 'Hello World' });
 });
 
-server.listen(3000, () => {
-    console.log('Server is running on port 3000');
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
 });
